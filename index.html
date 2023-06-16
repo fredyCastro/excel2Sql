@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Web Scrapping Test</title>
+    <style type="text/css">
+      td {
+        border: 4px solid #05000014;
+        padding: 1rem;
+       }
+      tr:nth-child(even) {
+        background-color: #dddddd;
+      }
+      tr {
+        background-color: #fff;
+      }
+      thead tr {
+        font-size: 12px;
+        text-align: center;
+        background-color: #646c74;
+        color:#FFF;
+      }
+      table {
+        margin: 0 auto; 
+        padding:20px;    
+        display: block;
+        height: 100%;
+        overflow-y: auto;
+      }
+      .row {
+        display: flex;
+        justify-content: space-between;
+      }
+      #result_area_div div {
+        width: 90%;
+        height: 200px;
+        border: 1px solid;
+        overflow: scroll;
+      }
+  </style>
+  </head>
+  <body>
+    <div class="container">
+        <div class="row">
+            <label>Archivo excel</label>
+            <input type="file" id="excel_file"/>
+        </div>
+        <div class="row">
+            <label>Esquema de HANA</label>
+            <input id="schema" placeholder="Esquema de HANA">
+        </div>
+        <div class="row">
+            <label>Tabla de HANA</label>
+            <input id="table" placeholder="Tabla de HANA">
+        </div>
+        <div class="row">
+            <label>Indice de hoja</label>
+            <input type="number" id="sheet_index" placeholder="Indice de hoja"  value="0">
+        </div>
+        <div class="row">
+            <label>Número de filas a saltar</label>
+            <input type="number" id="row_skip" placeholder="Número de filas a saltar" value="0">
+        </div>
+        <div class="row" style="justify-content: center; margin: 10px;">
+            <button id="get_headers">Obtener cabeceras</button>
+        </div>
+        <div class="row" id="header">
+            <strong>Campo</strong>
+            <strong>tipo</strong>
+            <strong>Orden</strong>
+        </div>
+
+        <div class="row" id="generate_sql_div" style="justify-content: center; display: none; margin: 10px;">
+            <button id="generate_sql">Generar SQL</button>
+        </div>
+
+        <div class="row" id="result_area_div" style="justify-content: center; display: none;">
+            <div></div>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.8.0/jszip.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.8.0/xlsx.js"></script>
+    <script>
+        let final_data;
+        document.getElementById("get_headers").onclick = () => {
+            const data = document.getElementById("excel_file").files[0];
+            let reader = new FileReader();
+            reader.onload = function () {
+                const workbook = XLSX.read(reader.result, {type: 'binary'});
+                const index = Number(document.getElementById("sheet_index").value);
+                const skip = Number(document.getElementById("row_skip").value);
+                const sheet_name = workbook.SheetNames[index];
+                const sheet = workbook.Sheets[sheet_name];
+                const ref = sheet["!ref"];
+                let new_ref = ref.split(":")[0].replace(/[0-9]/g, '') + (skip + 1);
+                new_ref = new_ref + ":" + ref.split(":")[1];
+                sheet["!ref"] = new_ref;
+                const result = XLSX.utils.sheet_to_row_object_array(sheet);
+                const header = document.getElementById("header");
+                Object.keys(result[0]).forEach((key, i) => {
+                    let div = document.createElement("div");
+                    div.className = "row field_value";
+                    let label = document.createElement("label");
+                    label.innerText = key;
+                    let input = document.createElement("input");
+                    input.value = i + 1;
+                    let select = document.createElement("select");
+                    //select.setAttribute("type", "select");
+                    let option1 = document.createElement("option");
+                    let option2 = document.createElement("option");
+                    let option3 = document.createElement("option");
+                    option1.value = "text";
+                    option1.innerText = "text";
+                    option2.value = "number";
+                    option2.innerText = "number";
+                    option3.value = "date";
+                    option3.innerText = "date";
+                    select.appendChild(option1);
+                    select.appendChild(option2);
+                    select.appendChild(option3);
+                    label.style.width = "33%";
+                    select.style.width = "33%";
+                    input.style.width = "33%";
+                    div.appendChild(label);
+                    div.appendChild(select);
+                    div.appendChild(input);
+                    header.parentNode.insertBefore(div, header.nextSibling);
+                });
+                const sqlButton = document.getElementById("generate_sql_div");
+                sqlButton.style.display = "";
+                final_data = result;
+            }
+            reader.readAsBinaryString(data);
+        }
+        document.getElementById("generate_sql").onclick = () => {
+            let schema = document.getElementById("schema").value;
+            let table = document.getElementById("table").value;
+            let fields = Object.values(document.querySelectorAll(".field_value"));
+            let header_data = fields.map(v => {
+                let header = v.querySelector("label").innerText;
+                let type = v.querySelector("select").value;
+                let orden = Number(v.querySelector("input").value);
+                return {header, type, orden};
+            });
+            header_data.sort((x,y) => x.orden - y.orden);
+            header_data = header_data.filter(x => x.orden != -1);
+            let sql_script = final_data.map(x => {
+                let row_values = header_data.map(y => {
+                    if (y.type == "number") return `${x[y.header] || 0}`;
+                    else if (y.type == "date") return `"${x[y.header].split("/").reverse().join("-")}"`;
+                    else return `"${x[y.header]}"`;
+                }).join(",");
+                return `INSERT INTO "${schema}"."${table}" VALUES (${row_values});`
+            }).join("\n");
+            document.querySelector("#result_area_div div").innerText = sql_script;
+            document.querySelector("#result_area_div").style.display = "";
+        }
+    </script>
+  </body>
+</html>
