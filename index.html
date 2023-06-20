@@ -76,12 +76,16 @@
         <div class="row" id="result_area_div" style="justify-content: center; display: none;">
             <div></div>
         </div>
+        <div class="row" id="copy_sql_div" style="justify-content: center; display: none; margin: 10px;">
+          <button id="copy_sql">Copiar SQL</button>
+      </div>
     </div>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.8.0/jszip.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.8.0/xlsx.js"></script>
     <script>
         let final_data;
+        let final_sql = '';
         document.getElementById("get_headers").onclick = () => {
             const data = document.getElementById("excel_file").files[0];
             let reader = new FileReader();
@@ -153,7 +157,13 @@
                 return `INSERT INTO "${schema}"."${table}" VALUES (${row_values});`
             }).join("\n");
             document.querySelector("#result_area_div div").innerText = sql_script;
+            final_sql = sql_script;
             document.querySelector("#result_area_div").style.display = "";
+            document.querySelector("#copy_sql_div").style.display = "";
+        }
+        document.getElementById("copy_sql").onclick = () => {
+          navigator.clipboard.writeText(final_sql);
+          alert("Se ha copiado el texto al portapeles");
         }
     </script>
   </body>
