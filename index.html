@@ -154,7 +154,7 @@
                     else if (y.type == "date") return `"${x[y.header].split("/").reverse().join("-")}"`;
                     else return `"${x[y.header]}"`;
                 }).join(",");
-                return `INSERT INTO "${schema}"."${table}" VALUES (${row_values.replaceAll("\n","")});`
+                return `INSERT INTO "${schema}"."${table}" VALUES (${row_values.replace(/[^\w]/gi, '')});`
             }).join("\n");
             document.querySelector("#result_area_div div").innerText = sql_script;
             final_sql = sql_script;
