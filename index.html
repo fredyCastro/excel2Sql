@@ -152,7 +152,7 @@
                 let row_values = header_data.map(y => {
                     if (y.type == "number") return `${x[y.header] || 0}`;
                     else if (y.type == "date") return `"${x[y.header].split("/").reverse().join("-")}"`;
-                    else return `"${x[y.header].replaceAll("\n", "").replaceAll("\r","").replaceAll('"',"'")}"`;
+                    else return `'${x[y.header].replaceAll("\n", "").replaceAll("\r","").replaceAll("'",'"')}'`;
                 }).join(",");
                 return `INSERT INTO "${schema}"."${table}" VALUES (${row_values});`
             }).join("\n");
