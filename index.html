@@ -152,9 +152,9 @@
                 let row_values = header_data.map(y => {
                     if (y.type == "number") return `${x[y.header] || 0}`;
                     else if (y.type == "date") return `"${x[y.header].split("/").reverse().join("-")}"`;
-                    else return `"${x[y.header]}"`;
+                    else return `"${x[y.header].replace(/[^\w\s]/gi, '')}"`;
                 }).join(",");
-                return `INSERT INTO "${schema}"."${table}" VALUES (${row_values.replace(/[^\w]/gi, '')});`
+                return `INSERT INTO "${schema}"."${table}" VALUES (${row_values});`
             }).join("\n");
             document.querySelector("#result_area_div div").innerText = sql_script;
             final_sql = sql_script;
