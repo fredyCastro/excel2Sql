@@ -87,6 +87,7 @@
         let final_data;
         let final_sql = '';
         document.getElementById("get_headers").onclick = () => {
+            Object.values(document.querySelectorAll(".field_value")).forEach(v => v.remove());
             const data = document.getElementById("excel_file").files[0];
             let reader = new FileReader();
             reader.onload = function () {
@@ -100,8 +101,14 @@
                 new_ref = new_ref + ":" + ref.split(":")[1];
                 sheet["!ref"] = new_ref;
                 const result = XLSX.utils.sheet_to_row_object_array(sheet);
+                let headers = [];
+                result.forEach(x => {
+                  Object.keys(x).forEach(key => {
+                    if (!headers.find(y => y === key)) headers.push(key);
+                  })
+                });
                 const header = document.getElementById("header");
-                Object.keys(result[0]).forEach((key, i) => {
+                headers.forEach((key, i) => {
                     let div = document.createElement("div");
                     div.className = "row field_value";
                     let label = document.createElement("label");
@@ -151,8 +158,8 @@
             let sql_script = final_data.map(x => {
                 let row_values = header_data.map(y => {
                     if (y.type == "number") return `${x[y.header] || 0}`;
-                    else if (y.type == "date") return `"${x[y.header].split("/").reverse().join("-")}"`;
-                    else return `'${x[y.header].replaceAll("\n", "").replaceAll("\r","").replaceAll("'",'"')}'`;
+                    else if (y.type == "date") return `"${(x[y.header] || "").split("/").reverse().join("-")}"`;
+                    else return `'${(x[y.header] || "").replaceAll("\n", "").replaceAll("\r","").replaceAll("'",'"')}'`;
                 }).join(",");
                 return `INSERT INTO "${schema}"."${table}" VALUES (${row_values});`
             }).join("\n");
