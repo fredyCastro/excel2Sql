@@ -113,6 +113,7 @@
                     div.className = "row field_value";
                     let label = document.createElement("label");
                     label.innerText = key;
+                    label.setAttribute("key",key);
                     let input = document.createElement("input");
                     input.value = i + 1;
                     let select = document.createElement("select");
@@ -148,7 +149,7 @@
             let table = document.getElementById("table").value;
             let fields = Object.values(document.querySelectorAll(".field_value"));
             let header_data = fields.map(v => {
-                let header = v.querySelector("label").innerText;
+                let header = v.querySelector("label").getAttribute("key");
                 let type = v.querySelector("select").value;
                 let orden = Number(v.querySelector("input").value);
                 return {header, type, orden};
