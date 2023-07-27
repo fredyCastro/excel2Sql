@@ -107,6 +107,7 @@
                     if (!headers.find(y => y === key)) headers.push(key);
                   })
                 });
+                headers.sort();
                 const header = document.getElementById("header");
                 headers.forEach((key, i) => {
                     let div = document.createElement("div");
