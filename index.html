@@ -58,7 +58,15 @@
         </div>
         <div class="row">
             <label>Número de filas a saltar</label>
-            <input type="number" id="row_skip" placeholder="Número de filas a saltar" value="0">
+            <input type="number" id="row_skip" placeholder="Número de filas a saltar Ej: A1:A5" value="0">
+        </div>
+        <div class="row">
+            <label>Rango de cabecera</label>
+            <input id="row_range" placeholder="Rango de cabeceras">
+        </div>
+        <div class="row">
+          <label>Diferenciar cabeceras</label>
+          <input type="checkbox" id="row_check" placeholder="Diferenciar cabeceras">
         </div>
         <div class="row" style="justify-content: center; margin: 10px;">
             <button id="get_headers">Obtener cabeceras</button>
@@ -86,6 +94,7 @@
     <script>
         let final_data;
         let final_sql = '';
+        const get_next_letter = my_string => String.fromCharCode(my_string.charCodeAt(my_string.length - 1) + 1)
         document.getElementById("get_headers").onclick = () => {
             Object.values(document.querySelectorAll(".field_value")).forEach(v => v.remove());
             const data = document.getElementById("excel_file").files[0];
@@ -94,20 +103,34 @@
                 const workbook = XLSX.read(reader.result, {type: 'binary'});
                 const index = Number(document.getElementById("sheet_index").value);
                 const skip = Number(document.getElementById("row_skip").value);
+                const input_header = document.getElementById("row_range").value;
+                const differentiate = document.getElementById("row_check").checked;
                 const sheet_name = workbook.SheetNames[index];
                 const sheet = workbook.Sheets[sheet_name];
                 const ref = sheet["!ref"];
                 let new_ref = ref.split(":")[0].replace(/[0-9]/g, '') + (skip + 1);
                 new_ref = new_ref + ":" + ref.split(":")[1];
                 sheet["!ref"] = new_ref;
-                const result = XLSX.utils.sheet_to_row_object_array(sheet);
                 let headers = [];
-                result.forEach(x => {
-                  Object.keys(x).forEach(key => {
-                    if (!headers.find(y => y === key)) headers.push(key);
-                  })
-                });
-                headers.sort();
+                if (input_header) {
+                  let first_letter = input_header[1];
+                  let [first_cell, last_cell] = input_header.split(":").map(x => x.replace(first_letter,""));
+                  let i = first_cell;
+                  while (i <= last_cell) {
+                    if (differentiate) sheet[i + first_letter].w += "_" + i;
+                    headers.push(sheet[i + first_letter].w);
+                    i = get_next_letter(i);
+                  }
+                }
+                const result = XLSX.utils.sheet_to_row_object_array(sheet);
+                if(!input_header) {
+                  result.forEach(x => {
+                    Object.keys(x).forEach(key => {
+                      if (!headers.find(y => y === key)) headers.push(key);
+                    })
+                  });
+                  headers.sort();
+                }
                 const header = document.getElementById("header");
                 headers.forEach((key, i) => {
                     let div = document.createElement("div");
